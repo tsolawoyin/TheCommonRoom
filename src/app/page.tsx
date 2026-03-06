@@ -1,9 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { BookOpen, Trophy, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useApp } from "@/providers/app-provider";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -33,6 +36,19 @@ const steps = [
 ];
 
 export default function LandingPage() {
+  const { user, authLoading } = useApp();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace("/dashboard");
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading || user) {
+    return <div className="min-h-svh bg-[#f5f0e8]" />;
+  }
+
   return (
     <div className="min-h-svh bg-[#f5f0e8] text-[#1a1a2e]">
       {/* Nav */}

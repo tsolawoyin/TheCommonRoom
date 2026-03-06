@@ -1,7 +1,5 @@
 export type UserRole = "user" | "admin";
 
-export type RoundStatus = "draft" | "active" | "closed";
-
 export interface User {
   id: string;
   full_name: string;
@@ -16,11 +14,18 @@ export interface User {
 export interface Season {
   id: string;
   name: string;
+  description: string | null;
   start_date: string;
   end_date: string;
   is_active: boolean;
+  sponsor_name: string | null;
+  sponsor_logo_url: string | null;
+  prize_pool: number;
   created_at: string;
 }
+
+/** Round duration is always 24 hours from starts_at */
+export const ROUND_DURATION_MS = 24 * 60 * 60 * 1000;
 
 export interface Round {
   id: string;
@@ -30,12 +35,25 @@ export interface Round {
   essay_body: string;
   sponsor_name: string | null;
   sponsor_logo_url: string | null;
-  prize_amount: number;
   starts_at: string;
-  ends_at: string;
-  status: RoundStatus;
   winner_id: string | null;
   created_at: string;
+}
+
+/** Computed round state based on dates (ends 24h after starts_at) */
+export type RoundState = "upcoming" | "active" | "closed";
+
+export function getRoundEndsAt(round: Pick<Round, "starts_at">): string {
+  return new Date(new Date(round.starts_at).getTime() + ROUND_DURATION_MS).toISOString();
+}
+
+export function getRoundState(round: Pick<Round, "starts_at">): RoundState {
+  const now = Date.now();
+  const start = new Date(round.starts_at).getTime();
+  const end = start + ROUND_DURATION_MS;
+  if (now < start) return "upcoming";
+  if (now <= end) return "active";
+  return "closed";
 }
 
 export interface Question {
