@@ -299,13 +299,13 @@ export default function DashboardPage() {
       if (user) {
         const { data: submission } = await supabase
           .from("submissions")
-          .select("id")
+          .select("id, answers")
           .eq("user_id", user.id)
           .eq("round_id", round.id)
           .limit(1)
           .maybeSingle();
 
-        hasSubmitted = !!submission;
+        hasSubmitted = !!submission?.answers;
       }
 
       const prizePerRound = season ? Math.round(season.prize_pool / 10) : 0;

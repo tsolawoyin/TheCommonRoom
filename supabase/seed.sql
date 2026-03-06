@@ -62,6 +62,80 @@ values (
   now() + interval '14 days'
 );
 
+-- ── Questions for Round 3 (The Last Bookshop in Lagos) ──
+insert into public.questions (round_id, question_text, options, correct_index, position)
+values
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'Where is the bookshop located?',
+    ARRAY['Victoria Island', 'Broad Street', 'Lekki Phase 1', 'Allen Avenue'],
+    1,
+    1
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What is notable about the bookshop''s exterior?',
+    ARRAY['It has a bright red door', 'It has no sign', 'It is painted gold', 'It has a neon light'],
+    1,
+    2
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What type of shops surround the bookshop?',
+    ARRAY['Food vendors', 'Clothing stores', 'Generator repair shops', 'Phone accessory shops'],
+    2,
+    3
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What is the main theme of the essay?',
+    ARRAY['Urban development', 'The survival of reading culture', 'Generator noise in Lagos', 'Street food culture'],
+    1,
+    4
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What does the bookshop symbolise in the essay?',
+    ARRAY['Wealth', 'Resistance against cultural decline', 'Government neglect', 'Childhood nostalgia'],
+    1,
+    5
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'Which word best describes the tone of the essay?',
+    ARRAY['Angry', 'Celebratory', 'Melancholic yet hopeful', 'Satirical'],
+    2,
+    6
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What challenge does the bookshop face?',
+    ARRAY['Flooding', 'Lack of customers and modern competition', 'Government demolition', 'High rent only'],
+    1,
+    7
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What literary device is most prominent in the opening?',
+    ARRAY['Metaphor', 'Imagery', 'Alliteration', 'Hyperbole'],
+    1,
+    8
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'Who is the likely intended audience of this essay?',
+    ARRAY['Children', 'Policy makers only', 'Educated Nigerians and general readers', 'Book publishers'],
+    2,
+    9
+  ),
+  (
+    'b1000000-0000-0000-0000-000000000003',
+    'What does the author suggest about the future of such bookshops?',
+    ARRAY['They will thrive', 'They are irrelevant', 'Their survival is uncertain but worth fighting for', 'They should be replaced by libraries'],
+    2,
+    10
+  );
+
 -- ══════════════════════════════════════════════
 -- REPLACE the UUID below with your real auth user id
 -- Find it: Supabase Dashboard → Authentication → Users

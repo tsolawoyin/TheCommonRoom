@@ -27,6 +27,9 @@ export interface Season {
 /** Round duration is always 24 hours from starts_at */
 export const ROUND_DURATION_MS = 24 * 60 * 60 * 1000;
 
+/** Quiz timer: 15 minutes per quiz attempt */
+export const QUIZ_DURATION_MS = 15 * 60 * 1000;
+
 export interface Round {
   id: string;
   season_id: string;
@@ -72,10 +75,11 @@ export interface Submission {
   id: string;
   user_id: string;
   round_id: string;
-  answers: number[];
-  score: number;
+  answers: number[] | null;
+  score: number | null;
   rank: number | null;
   points_earned: number;
+  started_at: string | null;
   submitted_at: string;
 }
 

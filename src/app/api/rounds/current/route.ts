@@ -73,13 +73,13 @@ export async function GET() {
   if (user) {
     const { data: submission } = await supabase
       .from("submissions")
-      .select("id")
+      .select("id, answers")
       .eq("user_id", user.id)
       .eq("round_id", round.id)
       .limit(1)
       .maybeSingle();
 
-    hasSubmitted = !!submission;
+    hasSubmitted = !!submission?.answers;
   }
 
   // Strip essay_body from response; also strip title if upcoming
