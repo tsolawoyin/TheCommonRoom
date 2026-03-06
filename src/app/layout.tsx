@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Playfair_Display, Karla } from "next/font/google";
 import { Providers } from "@/providers";
 import "./globals.css";
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${karla.variable} font-sans antialiased`}
       >
-        <Providers>{children}</Providers>
+        <Suspense>
+          <Providers>{children}</Providers>
+        </Suspense>
       </body>
     </html>
   );
