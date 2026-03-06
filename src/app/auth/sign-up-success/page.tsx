@@ -1,7 +1,14 @@
+"use client";
+
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 
-export default function Page() {
+function SuccessContent() {
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email");
+
   return (
     <div className="flex min-h-svh items-center justify-center bg-[#f5f0e8] px-6">
       <div className="w-full max-w-sm text-center">
@@ -12,8 +19,13 @@ export default function Page() {
           Check your email
         </h1>
         <p className="mt-2 text-sm leading-relaxed text-[#1a1a2e]/60">
-          We&apos;ve sent a confirmation link to your email address. Click it to
-          activate your account and start competing.
+          We&apos;ve sent a confirmation link to{" "}
+          {email ? (
+            <span className="font-medium text-[#0a2463]">{email}</span>
+          ) : (
+            "your email address"
+          )}
+          . Click it to activate your account and start competing.
         </p>
         <Link
           href="/auth/login"
@@ -23,5 +35,13 @@ export default function Page() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense>
+      <SuccessContent />
+    </Suspense>
   );
 }
