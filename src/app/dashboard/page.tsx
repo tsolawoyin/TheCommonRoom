@@ -84,7 +84,7 @@ interface RoundData {
   roundNumber: number;
   state: RoundState | null;
   hasSubmitted: boolean;
-  prizePerRound: number;
+  seasonPrize: number;
 }
 
 /* ── Countdown ── */
@@ -152,7 +152,7 @@ function CountdownDisplay({ target }: { target: string }) {
 /* ── Round Card ── */
 
 function RoundCard({ data }: { data: RoundData }) {
-  const { round, season, roundNumber, state, hasSubmitted, prizePerRound } =
+  const { round, season, roundNumber, state, hasSubmitted, seasonPrize } =
     data;
 
   if (!round || !state) {
@@ -189,9 +189,9 @@ function RoundCard({ data }: { data: RoundData }) {
         <CountdownDisplay target={countdownTarget} />
       </div>
 
-      {prizePerRound > 0 && (
+      {seasonPrize > 0 && (
         <p className="mt-5 text-lg font-semibold text-[#e8c547]">
-          ₦{prizePerRound.toLocaleString()} prize
+          ₦{seasonPrize.toLocaleString()} season prize
         </p>
       )}
 
@@ -250,6 +250,7 @@ export default function DashboardPage() {
     (Submission & { round_title: string })[]
   >([]);
   const [submissionsLoading, setSubmissionsLoading] = useState(true);
+  const [seasonRank, setSeasonRank] = useState<number | null>(null);
 
   const fetchRound = useCallback(async () => {
     try {
@@ -271,7 +272,7 @@ export default function DashboardPage() {
           roundNumber: 0,
           state: null,
           hasSubmitted: false,
-          prizePerRound: 0,
+          seasonPrize: 0,
         });
         return;
       }
@@ -308,7 +309,7 @@ export default function DashboardPage() {
         hasSubmitted = !!submission?.answers;
       }
 
-      const prizePerRound = season ? Math.round(season.prize_pool / 10) : 0;
+      const seasonPrize = season?.prize_pool ?? 0;
 
       setRoundData({
         round,
@@ -316,7 +317,7 @@ export default function DashboardPage() {
         roundNumber,
         state,
         hasSubmitted,
-        prizePerRound,
+        seasonPrize,
       });
     } catch {
       setRoundData({
@@ -325,7 +326,7 @@ export default function DashboardPage() {
         roundNumber: 0,
         state: null,
         hasSubmitted: false,
-        prizePerRound: 0,
+        seasonPrize: 0,
       });
     } finally {
       setRoundLoading(false);
@@ -361,11 +362,24 @@ export default function DashboardPage() {
     }
   }, [user, supabase]);
 
+  const fetchSeasonRank = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase.rpc("get_my_season_rank", {
+        p_user_id: user.id,
+      });
+      if (typeof data === "number") setSeasonRank(data);
+    } catch {
+      // leave empty
+    }
+  }, [user, supabase]);
+
   useEffect(() => {
     if (authLoading) return;
     fetchRound();
     fetchSubmissions();
-  }, [authLoading, fetchRound, fetchSubmissions]);
+    fetchSeasonRank();
+  }, [authLoading, fetchRound, fetchSubmissions, fetchSeasonRank]);
 
   const greeting = user?.full_name
     ? `Welcome back, ${user.full_name.split(" ")[0]}`
@@ -482,16 +496,8 @@ export default function DashboardPage() {
                 />
                 <StatCard
                   icon={Star}
-                  label="Best Rank"
-                  value={
-                    recentSubmissions.length > 0
-                      ? Math.min(
-                          ...recentSubmissions
-                            .map((s) => s.rank)
-                            .filter((r): r is number => r !== null)
-                        ) || "—"
-                      : "—"
-                  }
+                  label="Season Rank"
+                  value={seasonRank ? `#${seasonRank}` : "—"}
                 />
               </>
             )}

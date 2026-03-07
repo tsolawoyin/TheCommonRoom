@@ -91,3 +91,12 @@ export interface SeasonStanding {
   rounds_entered: number;
   best_rank: number | null;
 }
+
+export interface SeasonStandingEntry {
+  rank: number;
+  user_id: string;
+  full_name: string;
+  total_points: number;
+  rounds_entered: number;
+  best_rank: number | null;
+}

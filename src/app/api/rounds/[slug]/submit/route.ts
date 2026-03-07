@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { QUIZ_DURATION_MS } from "@/types/database";
 import type { Question } from "@/types/database";
+import { computePoints } from "@/lib/scoring";
 
 const GRACE_PERIOD_MS = 30 * 1000; // 30s grace for network latency
 
@@ -103,13 +104,23 @@ export async function POST(request: Request) {
     }
   }
 
-  // 7. Update submission
+  // 7. Compute points
+  const submittedAt = new Date().toISOString();
+  const pointsEarned = computePoints({
+    correct: score,
+    totalQuestions: total,
+    startedAt: submission.started_at,
+    submittedAt,
+  });
+
+  // 8. Update submission with score and points
   const { error: updateError } = await admin
     .from("submissions")
     .update({
       answers,
       score,
-      submitted_at: new Date().toISOString(),
+      points_earned: pointsEarned,
+      submitted_at: submittedAt,
     })
     .eq("id", submission_id);
 
@@ -120,9 +131,82 @@ export async function POST(request: Request) {
     );
   }
 
+  // 9. Compute snapshot rank: count submissions with higher points in this round
+  const { count: higherCount } = await admin
+    .from("submissions")
+    .select("*", { count: "exact", head: true })
+    .eq("round_id", submission.round_id)
+    .gt("points_earned", pointsEarned)
+    .not("answers", "is", null);
+
+  const rank = (higherCount ?? 0) + 1;
+
+  await admin
+    .from("submissions")
+    .update({ rank })
+    .eq("id", submission_id);
+
+  // 10. Update user stats: increment total_points and rounds_played
+  const { data: currentUser } = await admin
+    .from("users")
+    .select("total_points, rounds_played")
+    .eq("id", user.id)
+    .single();
+
+  if (currentUser) {
+    await admin
+      .from("users")
+      .update({
+        total_points: (currentUser.total_points ?? 0) + pointsEarned,
+        rounds_played: (currentUser.rounds_played ?? 0) + 1,
+      })
+      .eq("id", user.id);
+  }
+
+  // 11. Upsert season_standings
+  const { data: round } = await admin
+    .from("rounds")
+    .select("season_id")
+    .eq("id", submission.round_id)
+    .single();
+
+  if (round) {
+    const { data: existing } = await admin
+      .from("season_standings")
+      .select("id, total_points, rounds_entered, best_rank")
+      .eq("user_id", user.id)
+      .eq("season_id", round.season_id)
+      .maybeSingle();
+
+    if (existing) {
+      await admin
+        .from("season_standings")
+        .update({
+          total_points: existing.total_points + pointsEarned,
+          rounds_entered: existing.rounds_entered + 1,
+          best_rank: existing.best_rank === null
+            ? rank
+            : Math.min(existing.best_rank, rank),
+        })
+        .eq("id", existing.id);
+    } else {
+      await admin
+        .from("season_standings")
+        .insert({
+          user_id: user.id,
+          season_id: round.season_id,
+          total_points: pointsEarned,
+          rounds_entered: 1,
+          best_rank: rank,
+        });
+    }
+  }
+
   return NextResponse.json({
     status: "submitted",
     score,
     total,
+    points_earned: pointsEarned,
+    rank,
   });
 }

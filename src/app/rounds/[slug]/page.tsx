@@ -27,6 +27,8 @@ interface QuizData {
 interface SubmitResult {
   score: number;
   total: number;
+  points_earned: number;
+  rank: number;
 }
 
 /* ── Timer Hook ── */
@@ -158,7 +160,12 @@ export default function QuizPage() {
         }
 
         if (data.status === "submitted") {
-          setSubmitResult({ score: data.score, total: data.total });
+          setSubmitResult({
+            score: data.score,
+            total: data.total,
+            points_earned: data.points_earned,
+            rank: data.rank,
+          });
           setPageState("submitted");
         } else {
           setErrorMsg(data.error ?? "Submit failed");
@@ -274,14 +281,21 @@ export default function QuizPage() {
           </h1>
           <p className="mt-3 text-sm text-[#1a1a2e]/60">
             You&apos;ve already submitted your answers for this round.
-            Check back soon for your rank.
           </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-block rounded-lg bg-[#0a2463] px-6 py-2.5 text-sm font-medium text-white"
-          >
-            Back to Dashboard
-          </Link>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/leaderboard"
+              className="inline-block rounded-lg bg-[#0a2463] px-6 py-2.5 text-sm font-medium text-white"
+            >
+              View Leaderboard
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-block rounded-lg border border-[#0a2463]/20 px-6 py-2.5 text-sm font-medium text-[#0a2463]"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -308,23 +322,52 @@ export default function QuizPage() {
           <h1 className="font-(family-name:--font-playfair) text-3xl font-bold text-[#0a2463]">
             Quiz Submitted!
           </h1>
-          <div className="mt-6 rounded-2xl bg-white/60 p-6 shadow-sm backdrop-blur-sm">
-            <p className="text-sm uppercase tracking-wider text-[#1a1a2e]/40">
-              Your Score
-            </p>
-            <p className="mt-1 font-(family-name:--font-playfair) text-4xl font-bold text-[#0a2463]">
-              {submitResult.score}/{submitResult.total}
-            </p>
+
+          {/* Score + Points + Rank */}
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-white/60 p-4 shadow-sm backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wider text-[#1a1a2e]/40">
+                Score
+              </p>
+              <p className="mt-1 font-(family-name:--font-playfair) text-2xl font-bold text-[#0a2463]">
+                {submitResult.score}/{submitResult.total}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/60 p-4 shadow-sm backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wider text-[#1a1a2e]/40">
+                Points
+              </p>
+              <p className="mt-1 font-(family-name:--font-playfair) text-2xl font-bold text-[#e8c547]">
+                {submitResult.points_earned}
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white/60 p-4 shadow-sm backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wider text-[#1a1a2e]/40">
+                Rank
+              </p>
+              <p className="mt-1 font-(family-name:--font-playfair) text-2xl font-bold text-[#0a2463]">
+                #{submitResult.rank}
+              </p>
+            </div>
           </div>
+
           <p className="mt-4 text-sm text-[#1a1a2e]/60">
-            Check back for your rank once the round closes.
+            Your rank may change as more players submit.
           </p>
-          <Link
-            href="/dashboard"
-            className="mt-6 inline-block rounded-lg bg-[#0a2463] px-6 py-2.5 text-sm font-medium text-white"
-          >
-            Back to Dashboard
-          </Link>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link
+              href="/leaderboard"
+              className="inline-block rounded-lg bg-[#0a2463] px-6 py-2.5 text-sm font-medium text-white"
+            >
+              View Leaderboard
+            </Link>
+            <Link
+              href="/dashboard"
+              className="inline-block rounded-lg border border-[#0a2463]/20 px-6 py-2.5 text-sm font-medium text-[#0a2463]"
+            >
+              Back to Dashboard
+            </Link>
+          </div>
         </div>
       </div>
     );

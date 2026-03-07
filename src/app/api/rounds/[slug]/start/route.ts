@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getRoundState, QUIZ_DURATION_MS } from "@/types/database";
 import type { Round, ClientQuestion } from "@/types/database";
 
@@ -61,9 +62,11 @@ export async function POST(
     submissionId = existingSubmission.id;
     startedAt = existingSubmission.started_at;
   } else {
-    // Create new submission
+    // Use admin client to bypass RLS for the insert — auth and round
+    // state are already verified above.
+    const admin = createAdminClient();
     const now = new Date().toISOString();
-    const { data: newSub, error: insertError } = await supabase
+    const { data: newSub, error: insertError } = await admin
       .from("submissions")
       .insert({
         user_id: user.id,
@@ -76,6 +79,7 @@ export async function POST(
       .single();
 
     if (insertError || !newSub) {
+      console.error("Insert submission error:", insertError);
       return NextResponse.json(
         { error: "Failed to start quiz" },
         { status: 500 }
