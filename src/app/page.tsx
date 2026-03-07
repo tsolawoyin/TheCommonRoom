@@ -53,6 +53,11 @@ const faqItems = [
       "Each week, a new essay is published. You read it, take a timed quiz, and earn points based on how well you understood the material. Points accumulate across all 10 rounds.",
   },
   {
+    question: "How long does the competition last?",
+    answer:
+      "The competition lasts for 10 weeks.",
+  },
+   {
     question: "How are prizes distributed?",
     answer:
       "The \u20A6100,000 prize pool is distributed at the end of the season based on the final leaderboard standings. The more rounds you compete in, the better your chances.",
@@ -166,6 +171,7 @@ interface SeasonInfo {
   name: string;
   prize_pool: number;
   start_date: string;
+  end_date: string;
 }
 
 interface StandingRow {
@@ -191,7 +197,7 @@ export default function LandingPage() {
       const [seasonRes, leaderboardRes] = await Promise.all([
         supabase
           .from("seasons")
-          .select("name, prize_pool, start_date")
+          .select("name, prize_pool, start_date, end_date")
           .eq("is_active", true)
           .order("start_date", { ascending: false })
           .limit(1)
@@ -232,6 +238,14 @@ export default function LandingPage() {
   const seasonName = season?.name ?? "Season 1";
   const countdownTarget = season?.start_date ?? "2026-04-01T00:00:00Z";
 
+  const now = Date.now();
+  const startTime = new Date(countdownTarget).getTime();
+  const endTime = season?.end_date
+    ? new Date(season.end_date).getTime()
+    : Infinity;
+  const seasonState: "upcoming" | "live" | "ended" =
+    now < startTime ? "upcoming" : now <= endTime ? "live" : "ended";
+
   return (
     <div className="min-h-svh bg-[#f5f0e8] text-[#1a1a2e]">
       {/* Nav */}
@@ -261,7 +275,12 @@ export default function LandingPage() {
           custom={0}
           className="mb-4 rounded-full border border-[#e8c547]/40 bg-[#e8c547]/10 px-4 py-1.5 text-sm font-medium text-[#0a2463]"
         >
-          {seasonName} — Coming Soon
+          {seasonName} —{" "}
+          {seasonState === "upcoming"
+            ? "Coming Soon"
+            : seasonState === "live"
+              ? "Live Now"
+              : "Ended"}
         </motion.p>
 
         <motion.h1
@@ -328,10 +347,30 @@ export default function LandingPage() {
           </p>
 
           <div className="my-8">
-            <p className="mb-3 text-xs font-medium uppercase tracking-widest text-white/50">
-              Season starts in
-            </p>
-            <CountdownDisplay target={countdownTarget} />
+            {seasonState === "upcoming" && (
+              <>
+                <p className="mb-3 text-xs font-medium uppercase tracking-widest text-white/50">
+                  Season starts in
+                </p>
+                <CountdownDisplay target={countdownTarget} />
+              </>
+            )}
+            {seasonState === "live" && (
+              <div className="flex items-center justify-center gap-2">
+                <span className="relative flex size-3">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex size-3 rounded-full bg-green-500" />
+                </span>
+                <span className="text-lg font-semibold text-green-400">
+                  Live
+                </span>
+              </div>
+            )}
+            {seasonState === "ended" && (
+              <p className="text-sm font-medium text-white/50">
+                This season has ended. Stay tuned for the next one!
+              </p>
+            )}
           </div>
 
           <Button

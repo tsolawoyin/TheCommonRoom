@@ -429,7 +429,7 @@ export default function DashboardPage() {
               greeting
             )}
           </motion.h1>
-          <motion.p
+          <motion.div
             variants={fadeUp}
             initial="hidden"
             animate="visible"
@@ -441,7 +441,7 @@ export default function DashboardPage() {
             ) : (
               subtitle
             )}
-          </motion.p>
+          </motion.div>
         </section>
 
         {/* Active Round Card */}
