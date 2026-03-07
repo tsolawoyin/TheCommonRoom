@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useApp } from "@/providers/app-provider";
 import type { ClientQuestion } from "@/types/database";
 
 /* ── Types ── */
@@ -71,6 +72,7 @@ function formatTime(totalSeconds: number): string {
 export default function QuizPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
+  const { supabase } = useApp();
   const slug = params.slug;
 
   const [pageState, setPageState] = useState<PageState>("loading");
@@ -92,19 +94,20 @@ export default function QuizPage() {
 
     async function startQuiz() {
       try {
-        const res = await fetch(`/api/rounds/${slug}/start`, { method: "POST" });
-        const data = await res.json();
+        const { data, error } = await supabase.rpc("start_quiz", {
+          p_slug: slug,
+        });
 
         if (cancelled) return;
 
-        if (data.status === "already_submitted") {
-          setPageState("already_submitted");
+        if (error) {
+          setErrorMsg(error.message ?? "Failed to start quiz");
+          setPageState("error");
           return;
         }
 
-        if (!res.ok) {
-          setErrorMsg(data.error ?? "Failed to start quiz");
-          setPageState("error");
+        if (data.status === "already_submitted") {
+          setPageState("already_submitted");
           return;
         }
 
@@ -123,7 +126,7 @@ export default function QuizPage() {
 
     startQuiz();
     return () => { cancelled = true; };
-  }, [slug]);
+  }, [slug, supabase]);
 
   // ── Submit handler ──
   const doSubmit = useCallback(
@@ -131,12 +134,12 @@ export default function QuizPage() {
       if (submittedRef.current || !submissionIdRef.current) return;
       submittedRef.current = true;
 
-      const payload = JSON.stringify({
-        submission_id: submissionIdRef.current,
-        answers: answersRef.current,
-      });
-
+      // Beacon fallback for tab close — can't set auth headers, uses thin API route
       if (useBeacon) {
+        const payload = JSON.stringify({
+          submission_id: submissionIdRef.current,
+          answers: answersRef.current,
+        });
         navigator.sendBeacon(
           `/api/rounds/${slug}/submit`,
           new Blob([payload], { type: "application/json" })
@@ -147,12 +150,16 @@ export default function QuizPage() {
       setPageState("submitting");
 
       try {
-        const res = await fetch(`/api/rounds/${slug}/submit`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: payload,
+        const { data, error } = await supabase.rpc("submit_quiz", {
+          p_submission_id: submissionIdRef.current,
+          p_answers: answersRef.current,
         });
-        const data = await res.json();
+
+        if (error) {
+          setErrorMsg(error.message ?? "Submit failed");
+          setPageState("error");
+          return;
+        }
 
         if (data.status === "already_submitted") {
           setPageState("already_submitted");
@@ -168,7 +175,7 @@ export default function QuizPage() {
           });
           setPageState("submitted");
         } else {
-          setErrorMsg(data.error ?? "Submit failed");
+          setErrorMsg("Submit failed");
           setPageState("error");
         }
       } catch {
@@ -176,7 +183,7 @@ export default function QuizPage() {
         setPageState("error");
       }
     },
-    [slug]
+    [slug, supabase]
   );
 
   // ── Timer expiry ──
