@@ -9,32 +9,39 @@ export async function POST(request: Request) {
   if (!sanitized) {
     return NextResponse.json(
       { available: false, reason: "Invalid Nigerian phone number." },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const supabase = await createClient();
 
   // Check users table
-  const { data, error } = await supabase
-    .from("users")
-    .select("id")
-    .eq("phone", sanitized)
-    .limit(1)
-    .maybeSingle();
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("id")
+      .eq("phone", sanitized)
+      .limit(1)
+      .maybeSingle();
 
-  if (error) {
-    return NextResponse.json(
-      { available: false, reason: "Unable to verify phone number." },
-      { status: 500 }
-    );
-  }
+    if (error) {
+      return NextResponse.json(
+        { available: false, reason: "Unable to verify phone number." },
+        { status: 500 },
+      );
+    }
 
-  if (data) {
-    return NextResponse.json(
-      { available: false, reason: "This phone number is already registered." },
-      { status: 200 }
-    );
+    if (data) {
+      return NextResponse.json(
+        {
+          available: false,
+          reason: "This phone number is already registered.",
+        },
+        { status: 200 },
+      );
+    }
+  } catch (error) {
+    console.log(error);
   }
 
   return NextResponse.json({ available: true }, { status: 200 });

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Phone, CheckCircle, XCircle } from "lucide-react";
 
@@ -26,6 +26,7 @@ export function SignUpForm({
     "idle" | "checking" | "valid" | "taken" | "invalid"
   >("idle");
   const [isLoading, setIsLoading] = useState(false);
+  const phoneTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const router = useRouter();
 
   const checkPhone = useCallback(async (value: string) => {
@@ -41,13 +42,16 @@ export function SignUpForm({
 
     setPhoneStatus("checking");
     try {
-      const res = await fetch("/api/auth/check-phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: value }),
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("check_phone_available", {
+        p_phone: sanitized,
       });
-      const data = await res.json();
-      setPhoneStatus(data.available ? "valid" : "taken");
+
+      if (error) {
+        setPhoneStatus("idle");
+        return;
+      }
+      setPhoneStatus(data ? "valid" : "taken");
     } catch {
       setPhoneStatus("idle");
     }
@@ -55,13 +59,13 @@ export function SignUpForm({
 
   const handlePhoneChange = (value: string) => {
     setPhone(value);
-    // Reset status while typing, debounce the check
     setPhoneStatus("idle");
+    if (phoneTimeoutRef.current) {
+      clearTimeout(phoneTimeoutRef.current);
+    }
     const stripped = value.replace(/\D/g, "");
     if (stripped.length >= 10) {
-      // Enough digits to validate
-      const timeout = setTimeout(() => checkPhone(value), 400);
-      return () => clearTimeout(timeout);
+      phoneTimeoutRef.current = setTimeout(() => checkPhone(value), 400);
     }
   };
 
@@ -202,7 +206,7 @@ export function SignUpForm({
               </p>
             )}
             {phoneStatus !== "taken" && phoneStatus !== "invalid" && (
-              <p className="text-xs text-[#e8c547]">
+              <p className="text-xs text-[#1b30a8]">
                 Winners are contacted and verified by phone. Use a number you
                 answer.
               </p>
